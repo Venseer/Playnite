@@ -11,6 +11,15 @@ namespace Playnite.Plugins
 {
     public class Plugins
     {
+        public static void CreatePluginFolders()
+        {
+            FileSystem.CreateDirectory(Paths.PluginsProgramPath);
+            if (!Settings.IsPortable)
+            {
+                FileSystem.CreateDirectory(Paths.PluginsUserDataPath);
+            }
+        }
+
         public static List<string> GetPluginFiles()
         {
             var plugins = new List<string>();
@@ -22,9 +31,8 @@ namespace Playnite.Plugins
                 }
             }
 
-            if (!Paths.AreEqual(Paths.PluginsProgramPath, Paths.PluginsUserDataPath))
+            if (!Settings.IsPortable)
             {
-
                 if (Directory.Exists(Paths.PluginsUserDataPath))
                 {
                     foreach (var file in Directory.GetFiles(Paths.PluginsUserDataPath, "*.dll", SearchOption.TopDirectoryOnly))
@@ -39,9 +47,15 @@ namespace Playnite.Plugins
 
         public static List<Plugin> LoadPlugin(string path, IPlayniteAPI api)
         {
+            var plugins = new List<Plugin>();
             var asmName = AssemblyName.GetAssemblyName(path);
             var assembly = Assembly.Load(asmName);
             var sdkReference = assembly.GetReferencedAssemblies().FirstOrDefault(a => a.Name == "PlayniteSDK");
+            if (sdkReference == null)
+            {
+                return plugins;
+            }
+
             if (sdkReference.Version.Major != SDK.Version.SDKVersion.Major)
             {
                 throw new Exception($"Plugin doesn't support this version of Playnite SDK.");
@@ -63,8 +77,7 @@ namespace Playnite.Plugins
                     }
                 }
             }
-
-            var plugins = new List<Plugin>();
+            
             foreach (var type in pluginTypes)
             {
                 Plugin plugin = (Plugin)Activator.CreateInstance(type, new object[] { api });
