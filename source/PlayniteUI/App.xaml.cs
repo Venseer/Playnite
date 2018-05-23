@@ -123,6 +123,7 @@ namespace PlayniteUI
 #if !DEBUG
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 #endif
+            Settings.ConfigureLogger();
 
             // Multi-instance checking
             if (Mutex.TryOpenExisting(instanceMuxet, out var mutex))
@@ -167,8 +168,7 @@ namespace PlayniteUI
             {
                 System.Windows.Media.RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.SoftwareOnly;
             }
-
-            Settings.ConfigureLogger();
+            
             Settings.ConfigureCef();
             dialogs = new DialogsFactory(AppSettings.StartInFullscreen);
 
@@ -339,9 +339,9 @@ namespace PlayniteUI
 
         private async void CheckUpdate()
         {
-            await Task.Factory.StartNew(() =>
+            await Task.Run(async () =>
             {
-                Thread.Sleep(10000);
+                await Task.Delay(10000);
                 if (GlobalTaskHandler.IsActive)
                 {
                     GlobalTaskHandler.Wait();
@@ -378,14 +378,14 @@ namespace PlayniteUI
                         logger.Error(exc, "Failed to process update.");
                     }
 
-                    Thread.Sleep(4 * 60 * 60 * 1000);
+                    await Task.Delay(4 * 60 * 60 * 1000);
                 }
             });
         }
 
         private async void SendUsageData()
         {
-            await Task.Factory.StartNew(() =>
+            await Task.Run(() =>
             {
                 try
                 {
