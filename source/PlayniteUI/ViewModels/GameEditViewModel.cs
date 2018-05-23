@@ -905,7 +905,7 @@ namespace PlayniteUI.ViewModels
         {
             get => new RelayCommand<object>((a) =>
             {
-                var model = new MetadataLookupViewModel(MetadataProvider.IGDB, MetadataLookupWindowFactory.Instance, dialogs, resources, appSettings.IGDBApiKey);
+                var model = new MetadataLookupViewModel(MetadataProvider.IGDB, MetadataLookupWindowFactory.Instance, dialogs, resources);
                 DoMetadataLookup(model);
             });
         }
@@ -1968,24 +1968,10 @@ namespace PlayniteUI.ViewModels
                     }
                 }
 
-                if (EditingGame.Provider == Provider.Custom &&
-                    string.IsNullOrEmpty(EditingGame.IsoPath) &&
-                    string.IsNullOrEmpty(EditingGame.InstallDirectory))
+                if (Game.State.Installed != EditingGame.State.Installed)
                 {
-                    // For UWP games which don't have installed dir
-                    if (EditingGame.PlayTask?.Path == "explorer.exe")
-                    {
-                        Game.State = new GameState(Game.State) { Installed = true };
-                    }
-                    else
-                    {
-                        // GameState is not observable so we need to change the whole object to send notify messages
-                        Game.State = new GameState(Game.State) { Installed = false };
-                    }
-                }
-                else
-                {
-                    Game.State = new GameState(Game.State) { Installed = true };
+                    // GameState is not observable so we need to change the whole object to send notify messages
+                    Game.State = new GameState(Game.State) { Installed = EditingGame.State.Installed };
                 }
             }
 
@@ -2347,7 +2333,7 @@ namespace PlayniteUI.ViewModels
         {
             ProgressVisible = true;
 
-            await Task.Factory.StartNew(() =>
+            await Task.Run(() =>
             {
                 try
                 {

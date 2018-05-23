@@ -130,10 +130,12 @@ Automatically imported games may reappear in Playnite after next import procedur
     
     <sys:String x:Key="LOCGameVariablesTooltip" xml:space="preserve">Special variables can be used to add dynamic string:
 {InstallDir} - Game installation directory
+{InstallDirName} - Name of installation folder
 {ImagePath} - Game ISO/ROM path if set
 {ImageName} - Game ISO/ROM file name
 {ImageNameNoExt} - Game ISO/ROM file name without extension
 {PlayniteDir} - Playnite's installation directory
+{Name} - Game name
         
 Example: -image "{ImagePath}" -fullscreen
 Results in: -image "c:\folder\image.iso" -fullscreen</sys:String>
@@ -197,11 +199,12 @@ Prefer data from official Store and where not available use IGBD.com database.</
     <sys:String x:Key="LOCSettingsGeneralLabel">General</sys:String>
     <sys:String x:Key="LOCSettingsAppearanceLabel">Appearance</sys:String>
     <sys:String x:Key="LOCSettingsAdvancedLabel">Advanced</sys:String>
+    <sys:String x:Key="LOCSettingsFullscreenLabel">Fullscreen</sys:String>
     <sys:String x:Key="LOCSettingsProvidersLabel">Providers</sys:String>
     <sys:String x:Key="LOCSettingsImportLabel">Import changes in library automatically</sys:String>
     <sys:String x:Key="LOCSettingsImportInstalledLabel">Import installed games</sys:String>
     <sys:String x:Key="LOCSettingsImportLibraryLabel">Import all games</sys:String>
-    <sys:String x:Key="LOCSettingsImportSteamLibraryLabel">Import all games (Account privacy settings must be set to Public or API key must be provided)</sys:String>
+    <sys:String x:Key="LOCSettingsImportSteamLibraryLabel">Import all games (Public account or API key must be provided)</sys:String>
     <sys:String x:Key="LOCSettingsInvalidDBLocation">Invalid database file location, proper file path must be set.</sys:String>
     <sys:String x:Key="LOCSettingsInvalidSteamAccountName">Steam account name cannot be empty.</sys:String>
     <sys:String x:Key="LOCSettingsInvalidSteamAccountLibImport">No Steam account selected for library import.</sys:String>
@@ -212,6 +215,7 @@ Prefer data from official Store and where not available use IGBD.com database.</
     <sys:String x:Key="LOCSettingsAsyncImageLoading">Asynchronous image loading (requires restart)</sys:String>
     <sys:String x:Key="LOCSettingsAsyncImageLoadingTooltip">Improves scrolling smoothness of game lists in exchange for slower image load times.</sys:String>
     <sys:String x:Key="LOCSettingsShowNameEmptyCover">Display game name when cover art is missing</sys:String>
+    <sys:String x:Key="LOCSettingsShowNamesUnderCover">Show game names on cover view</sys:String>
     <sys:String x:Key="LOCSettingsShowIconList">Show game icons on List view</sys:String>
     <sys:String x:Key="LOCSettingsDisableAcceleration">Disable hardware acceleration (requires restart)</sys:String>
     <sys:String x:Key="LOCSettingsDisableAccelerationTooltip">Use when experiencing stuttering or similar UI issues</sys:String>
@@ -253,6 +257,9 @@ Any currently active tasks (metadata downloads) will be canceled.</sys:String>
     <sys:String x:Key="LOCSettingsRestartTitle">Restart Playnite?</sys:String>
     <sys:String x:Key="LOCSettingsDBPathNotification">New database file location will only be used after application is restarted.</sys:String>
     <sys:String x:Key="LOCSettingsClosePlaytimeNotif">Gameplay time will not be recorded if "Close" action is set.</sys:String>
+    <sys:String x:Key="LOCSettingsFullscreenRows">Number of rows</sys:String>
+    <sys:String x:Key="LOCSettingsFullscreenColumns">Number of columns</sys:String>
+    <sys:String x:Key="LOCSettingsFullscreenRowDetails">Number of detail view rows</sys:String>
     <sys:String x:Key="LOCBackgroundImageScreenOption">Prefer game screenshot instead of store background image</sys:String>
     <sys:String x:Key="LOCBackgroundImageScreenOptionTooltip" xml:space="preserve">Playnite will use available game screenshots as background instead of store background image.
 Doesn't apply retrospectively to existing games.</sys:String>
@@ -431,7 +438,8 @@ It's currently being used by {1} game(s) and {2} emulator(s).</sys:String>
     <sys:String x:Key="LOCStartupError">Startup Error</sys:String>
     <sys:String x:Key="LOCSkinError">Theme Error</sys:String>
     <sys:String x:Key="LOCClearAll">Clear All</sys:String>
-    <sys:String x:Key="LOCSetupRunning">Setup in progress</sys:String>
+    <sys:String x:Key="LOCSetupRunning">Installing</sys:String>
+    <sys:String x:Key="LOCUninstalling">Unnstalling</sys:String>
     <sys:String x:Key="LOCGameLaunching">Launching</sys:String>
     <sys:String x:Key="LOCGameRunning">Running</sys:String>
     <sys:String x:Key="LOCInvalidURL">Invalid URL</sys:String>
@@ -508,4 +516,10 @@ It's currently being used by {1} game(s) and {2} emulator(s).</sys:String>
     <sys:String x:Key="LOCPlayedMinutes">{0} minutes</sys:String>
     <sys:String x:Key="LOCPlayedSeconds">{0} seconds</sys:String>
     <sys:String x:Key="LOCPlayedNone">Not Played</sys:String>
+
+    <sys:String x:Key="LOCOpeningDesktopModeMessage">Opening Desktop mode...</sys:String>
+    <sys:String x:Key="LOCOpeningFullscreenModeMessage">Opening Fullscreen mode...</sys:String>
+    <sys:String x:Key="LOCScriptInstallFail">Failed to install script file.</sys:String>
+    <sys:String x:Key="LOCScriptInstallSuccess">Script installed successfully.</sys:String>
+    <sys:String x:Key="LOCInstallScript">Install Script</sys:String>
 </ResourceDictionary>

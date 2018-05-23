@@ -8,6 +8,9 @@
     [ValidateSet("x86", "x64")]
     [string]$Platform = "x86",
     [string]$UpdateBranch = "stable",
+    [string]$UpdateUrl = "",
+    [string]$UpdateUrl2 = "",
+    [string]$ServicesUrl = "",
     [switch]$Sign = $false
 )
 
@@ -91,17 +94,18 @@ if (!$SkipBuild)
             Join-Path $OutputPath "PlayniteSDK.dll" | SignFile
             Join-Path $OutputPath "PlayniteUI.exe" | SignFile
         }
-
-        # Copy IronPython standard library
-        Copy-Item "..\references\IronPythonStdLib.zip" $OutputPath
     }
 }
 
 # -------------------------------------------
-#            Set update branch 
+#            Set config values
 # -------------------------------------------
 $configPath = Join-Path $OutputPath "PlayniteUI.exe.config"
-(Get-Content $configPath) -replace '.*key="UpdateBranch".*', "<add key=`"UpdateBranch`" value=`"$UpdateBranch`" />" | Out-File $configPath -Encoding utf8
+$configContent = Get-Content $configPath
+$configContent = $configContent -replace '.*key="UpdateBranch".*', "<add key=`"UpdateBranch`" value=`"$UpdateBranch`" />"
+$configContent = $configContent -replace '.*key="UpdateUrl".*', "<add key=`"UpdateUrl`" value=`"$UpdateUrl`" />"
+$configContent = $configContent -replace '.*key="UpdateUrl2".*', "<add key=`"UpdateUrl2`" value=`"$UpdateUrl2`" />"
+$configContent -replace '.*key="ServicesUrl".*', "<add key=`"ServicesUrl`" value=`"$ServicesUrl`" />" | Out-File $configPath -Encoding utf8
 
 # -------------------------------------------
 #            Build installer
@@ -115,7 +119,7 @@ if ($Setup)
     $installerTempScript = "setup.temp.nsi"
 
     $buildNumber = (Get-ChildItem (Join-Path $OutputPath "PlayniteUI.exe")).VersionInfo.ProductVersion
-    $buildNumber = $buildNumber -replace "\.0\.0", ""
+    $buildNumber = $buildNumber -replace "\.0\.\d+$", ""
 
     $scriptContent = Get-Content $installerScript
     $files = Get-ChildItem $OutputPath -Recurse

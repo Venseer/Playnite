@@ -22,6 +22,8 @@ using System.ComponentModel;
 using Playnite.MetaProviders;
 using Playnite.API;
 using PlayniteUI.API;
+using Playnite.Plugins;
+using Playnite.Scripting;
 
 namespace PlayniteUI
 {
@@ -36,8 +38,6 @@ namespace PlayniteUI
         private bool resourcesReleased = false;
         private PipeService pipeService;
         private PipeServer pipeServer;
-        private MainViewModel mainModel;
-        private FullscreenViewModel fullscreenModel;
         private XInputDevice xdevice;
         private DialogsFactory dialogs;
 
@@ -47,6 +47,19 @@ namespace PlayniteUI
         }
         
         public event PropertyChangedEventHandler PropertyChanged;
+
+
+        public static MainViewModel MainModel
+        {
+            get;
+            private set;
+        }
+
+        public static FullscreenViewModel FullscreenModel
+        {
+            get;
+            private set;
+        }
 
         public static GameDatabase Database
         {
@@ -110,6 +123,7 @@ namespace PlayniteUI
 #if !DEBUG
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 #endif
+            Settings.ConfigureLogger();
 
             // Multi-instance checking
             if (Mutex.TryOpenExisting(instanceMuxet, out var mutex))
@@ -154,10 +168,20 @@ namespace PlayniteUI
             {
                 System.Windows.Media.RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.SoftwareOnly;
             }
-
-            Settings.ConfigureLogger();
+            
             Settings.ConfigureCef();
             dialogs = new DialogsFactory(AppSettings.StartInFullscreen);
+
+            // Create directories
+            try
+            {
+                Plugins.CreatePluginFolders();
+                Scripts.CreateScriptFolders();
+            }
+            catch (Exception exc) when (!PlayniteEnvironment.ThrowAllErrors)
+            {
+                logger.Error(exc, "Failed to script and plugin directories.");
+            }
 
             // Load theme
             ApplyTheme(AppSettings.Skin, AppSettings.SkinColor, false);
@@ -248,7 +272,7 @@ namespace PlayniteUI
             // Main view startup
             if (AppSettings.StartInFullscreen)
             {
-                OpenFullscreenView();
+                OpenFullscreenView(true);
             }
             else
             {
@@ -290,8 +314,8 @@ namespace PlayniteUI
             switch (args.Command)
             {
                 case CmdlineCommands.Focus:                    
-                    mainModel?.RestoreWindow();
-                    fullscreenModel?.RestoreWindow();
+                    MainModel?.RestoreWindow();
+                    FullscreenModel?.RestoreWindow();
                     break;
 
                 case CmdlineCommands.Launch:
@@ -315,9 +339,9 @@ namespace PlayniteUI
 
         private async void CheckUpdate()
         {
-            await Task.Factory.StartNew(() =>
+            await Task.Run(async () =>
             {
-                Thread.Sleep(10000);
+                await Task.Delay(10000);
                 if (GlobalTaskHandler.IsActive)
                 {
                     GlobalTaskHandler.Wait();
@@ -354,14 +378,14 @@ namespace PlayniteUI
                         logger.Error(exc, "Failed to process update.");
                     }
 
-                    Thread.Sleep(4 * 60 * 60 * 1000);
+                    await Task.Delay(4 * 60 * 60 * 1000);
                 }
             });
         }
 
         private async void SendUsageData()
         {
-            await Task.Factory.StartNew(() =>
+            await Task.Run(() =>
             {
                 try
                 {
@@ -427,7 +451,7 @@ namespace PlayniteUI
         {
             if (Database.IsOpen)
             {
-                fullscreenModel = null;
+                FullscreenModel = null;
                 Database.CloseDatabase();
             }
 
@@ -435,19 +459,19 @@ namespace PlayniteUI
             dialogs.IsFullscreen = false;
             ApplyTheme(AppSettings.Skin, AppSettings.SkinColor, false);
             var window = new MainWindowFactory();
-            mainModel = new MainViewModel(
+            MainModel = new MainViewModel(
                 Database,
                 window,
                 dialogs,
                 new ResourceProvider(),
                 AppSettings,
                 GamesEditor);
-            Api.MainView = new MainViewAPI(mainModel);
-            mainModel.OpenView();
+            Api.MainView = new MainViewAPI(MainModel);
+            MainModel.OpenView();
             Current.MainWindow = window.Window;
             if (AppSettings.UpdateLibStartup)
             {
-                await mainModel.UpdateDatabase(AppSettings.UpdateLibStartup, steamCatImportId, !isFirstStart);
+                await MainModel.UpdateDatabase(AppSettings.UpdateLibStartup, steamCatImportId, !isFirstStart);
             }
 
             if (isFirstStart)
@@ -456,15 +480,15 @@ namespace PlayniteUI
                 metaSettings.ConfigureFields(MetadataSource.StoreOverIGDB, true);
                 metaSettings.CoverImage.Source = MetadataSource.IGDBOverStore;
                 metaSettings.Name = new MetadataFieldSettings(true, MetadataSource.Store);
-                await mainModel.DownloadMetadata(metaSettings);
+                await MainModel.DownloadMetadata(metaSettings);
             }
         }
 
-        public async void OpenFullscreenView()
+        public async void OpenFullscreenView(bool updateDb)
         {
             if (Database.IsOpen)
             {
-                mainModel = null;
+                MainModel = null;
                 Database.CloseDatabase();
             }
 
@@ -472,17 +496,21 @@ namespace PlayniteUI
             dialogs.IsFullscreen = true;
             ApplyTheme(AppSettings.SkinFullscreen, AppSettings.SkinColorFullscreen, true);
             var window = new FullscreenWindowFactory();
-            fullscreenModel = new FullscreenViewModel(
+            FullscreenModel = new FullscreenViewModel(
                 Database,
                 window,
                 dialogs,
                 new ResourceProvider(),
                 AppSettings,
                 GamesEditor);
-            Api.MainView = new MainViewAPI(mainModel);
-            fullscreenModel.OpenView(true);
+            Api.MainView = new MainViewAPI(MainModel);
+            FullscreenModel.OpenView(!PlayniteEnvironment.IsDebugBuild);
             Current.MainWindow = window.Window;
-            await fullscreenModel.UpdateDatabase(AppSettings.UpdateLibStartup, 0, true);
+
+            if (updateDb)
+            {
+                await FullscreenModel.UpdateDatabase(AppSettings.UpdateLibStartup, 0, true);
+            }            
         }
 
         private void ApplyTheme(string name, string profile, bool fullscreen)

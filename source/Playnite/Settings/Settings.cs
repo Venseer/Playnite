@@ -166,6 +166,22 @@ namespace Playnite
             }
         }
 
+
+        private bool showNamesUnderCovers = false;
+        public bool ShowNamesUnderCovers
+        {
+            get
+            {
+                return showNamesUnderCovers;
+            }
+
+            set
+            {
+                showNamesUnderCovers = value;
+                OnPropertyChanged("ShowNamesUnderCovers");
+            }
+        }
+
         private bool migrationV2PcPlatformAdded = false;
         public bool MigrationV2PcPlatformAdded
         {
@@ -462,7 +478,7 @@ namespace Playnite
             }
         }
 
-        private string skin = "Classic";
+        private string skin = "Modern";
         public string Skin
         {
             get
@@ -522,18 +538,18 @@ namespace Playnite
             }
         }
 
-        private string igdbApiKey;
-        public string IGDBApiKey
+        private FullscreenSettings fullscreenSettings = new FullscreenSettings();
+        public FullscreenSettings FullscreenSettings
         {
             get
             {
-                return igdbApiKey;
+                return fullscreenSettings;
             }
 
             set
             {
-                igdbApiKey = value;
-                OnPropertyChanged("IGDBApiKey");
+                fullscreenSettings = value;
+                OnPropertyChanged("FullscreenSettings");
             }
         }
 
@@ -692,6 +708,18 @@ namespace Playnite
         public static string GetAppConfigValue(string key)
         {
             return ConfigurationManager.AppSettings[key];
+        }
+
+        public static bool GetAppConfigBoolValue(string key)
+        {
+            if (bool.TryParse(ConfigurationManager.AppSettings[key], out var result))
+            {
+                return result;
+            }
+            else
+            {
+                return false;
+            }
         }
     }
 }

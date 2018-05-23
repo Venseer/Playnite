@@ -39,7 +39,7 @@ namespace PlayniteUI.ViewModels
 
         public bool? ActivateProgress()
         {
-            Task.Factory.StartNew(progresAction).
+            Task.Run(progresAction).
                 ContinueWith((a) =>
                 {
                     if (a.Exception == null)
@@ -52,6 +52,12 @@ namespace PlayniteUI.ViewModels
                     }
                 });
             return window.CreateAndOpenDialog(this);
+        }
+
+        public static bool? ActivateProgress(Action progresAction, string progressText)
+        {
+            var progressModel = new ProgressViewViewModel(new ProgressWindowFactory(), progresAction, progressText);
+            return progressModel.ActivateProgress();
         }
     }
 }

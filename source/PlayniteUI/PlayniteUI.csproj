@@ -184,6 +184,7 @@
     <Compile Include="Commands\GeneralCommands.cs" />
     <Compile Include="Commands\GenericCommands.cs" />
     <Compile Include="Commands\RelayCommand.cs" />
+    <Compile Include="Controls\ExtendedListView.cs" />
     <Compile Include="Controls\NullableIntBox.cs" />
     <Compile Include="Controls\NumericBox.cs" />
     <Compile Include="Controls\ExtendedListBox.cs" />
@@ -460,6 +461,16 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="SkinsFullscreen\Playnite\Playnite.PlayStation.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Localization\lithuanian.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Localization\hungarian.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
