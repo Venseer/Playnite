@@ -72,12 +72,17 @@ namespace Playnite.Providers.Steam
                     var gameState = steam.GetAppState(id);
                     if (gameState.Installed == true)
                     {
+                        if (Game.PlayTask == null)
+                        {
+                            Game.PlayTask = steam.GetPlayTask(int.Parse(Game.ProviderId));
+                        }
+
                         stopWatch.Stop();
                         OnInstalled(this, new GameControllerEventArgs(this, stopWatch.Elapsed.TotalSeconds));
                         return;
                     }
 
-                    await Task.Delay(2000);
+                    await Task.Delay(Timer.SecondsToMilliseconds(5));
                 }
             });
         }
@@ -105,7 +110,7 @@ namespace Playnite.Providers.Steam
                         return;
                     }
 
-                    await Task.Delay(2000);
+                    await Task.Delay(Timer.SecondsToMilliseconds(5));
                 }
             });
         }
@@ -134,7 +139,7 @@ namespace Playnite.Providers.Steam
                         break;
                     }
 
-                    await Task.Delay(1000);
+                    await Task.Delay(Timer.SecondsToMilliseconds(2));
                 }
 
                 while (true)
@@ -152,7 +157,7 @@ namespace Playnite.Providers.Steam
                         return;
                     }
 
-                    await Task.Delay(1000);
+                    await Task.Delay(Timer.SecondsToMilliseconds(5));
                 }
             });
         }
