@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -51,7 +52,16 @@ namespace Playnite
         None,
         Provider,
         Category,
-        Platform
+        Genre,
+        Developer,
+        Publisher,
+        Tag,
+        Platform,
+        Series,
+        AgeRating,
+        Region,
+        Source,
+        ReleaseYear
     }
 
     public enum ViewType : int
@@ -74,7 +84,7 @@ namespace Playnite
             set
             {
                 sortingOrder = value;
-                OnPropertyChanged("SortingOrder");
+                OnPropertyChanged();
             }
         }
 
@@ -89,7 +99,7 @@ namespace Playnite
             set
             {
                 sortingOrderDirection = value;
-                OnPropertyChanged("SortingOrderDirection");
+                OnPropertyChanged();
             }
         }
 
@@ -104,7 +114,7 @@ namespace Playnite
             set
             {
                 groupingOrder = value;
-                OnPropertyChanged("GroupingOrder");
+                OnPropertyChanged();
             }
         }
 
@@ -119,7 +129,7 @@ namespace Playnite
             set
             {
                 gamesViewType = value;
-                OnPropertyChanged("GamesViewType");
+                OnPropertyChanged();
             }
         }
 
@@ -134,7 +144,7 @@ namespace Playnite
             set
             {
                 coversZoom = value;
-                OnPropertyChanged("CoversZoom");
+                OnPropertyChanged();
             }
         }
     }        

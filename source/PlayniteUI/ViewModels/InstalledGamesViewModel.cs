@@ -1,5 +1,4 @@
-﻿using NLog;
-using Playnite;
+﻿using Playnite;
 using Playnite.Database;
 using Playnite.SDK.Models;
 using Playnite.SDK;
@@ -15,6 +14,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using Playnite.Common.System;
+using Playnite.SDK.Metadata;
+using System.Diagnostics;
 
 namespace PlayniteUI.ViewModels
 {
@@ -26,33 +28,7 @@ namespace PlayniteUI.ViewModels
             UWP
         }
 
-        public class InstalledGameMetadata
-        {
-            public class IconData
-            {
-                public string Name
-                {
-                    get; set;
-                }
-
-                public byte[] Data
-                {
-                    get; set;
-                }
-            }
-
-            public IconData Icon
-            {
-                get; set;
-            }
-
-            public Game Game
-            {
-                get; set;
-            }
-        }
-
-        public class ImportableProgram : Program
+        public class ImportableProgram : SelectableItem<Program>
         {
             public ProgramType Type
             {
@@ -69,7 +45,7 @@ namespace PlayniteUI.ViewModels
             {
                 get
                 {
-                    if (string.IsNullOrEmpty(Icon))
+                    if (string.IsNullOrEmpty(Item.Icon))
                     {
                         return null;
                     }
@@ -81,23 +57,23 @@ namespace PlayniteUI.ViewModels
 
                     if (Type == ProgramType.UWP)
                     {
-                        iconSource = BitmapExtensions.CreateSourceFromURI(new Uri(Icon));
+                        iconSource = BitmapExtensions.CreateSourceFromURI(new Uri(Item.Icon));
                     }
                     else
                     {
                         string path;
-                        var match = Regex.Match(Icon, @"(.*),(\d+)");
+                        var match = Regex.Match(Item.Icon, @"(.*),(\d+)");
                         if (match.Success)
                         {
                             path = match.Groups[1].Value;
                             if (string.IsNullOrEmpty(path))
                             {
-                                path = Path;
+                                path = Item.Path;
                             }
                         }
                         else
                         {
-                            path = Icon;
+                            path = Item.Icon;
                         }
 
                         var index = match.Groups[2].Value;
@@ -122,27 +98,18 @@ namespace PlayniteUI.ViewModels
                 get; set;
             }
 
-            public ImportableProgram()
-            {
-            }
-
-            public ImportableProgram(Program program, ProgramType type)
+            public ImportableProgram(Program program, ProgramType type) : base(program)
             {
                 Type = type;
-                Name = program.Name;
-                Icon = program.Icon;
-                Path = program.Path;
                 DisplayPath = type == ProgramType.Win32 ? program.Path : "Windows Store";
-                Arguments = program.Arguments;
-                WorkDir = program.WorkDir;
             }
         }
         
-        public List<InstalledGameMetadata> Games
+        public List<GameMetadata> SelectedGames
         {
             get;
             private set;
-        } = new List<InstalledGameMetadata>();
+        } = new List<GameMetadata>();
 
         private ObservableCollection<ImportableProgram> programs = new ObservableCollection<ImportableProgram>();
         public ObservableCollection<ImportableProgram> Programs
@@ -155,7 +122,7 @@ namespace PlayniteUI.ViewModels
             set
             {
                 programs = value;
-                OnPropertyChanged("Programs");
+                OnPropertyChanged();
             }
         }
 
@@ -170,7 +137,7 @@ namespace PlayniteUI.ViewModels
             set
             {
                 selectedProgram = value;
-                OnPropertyChanged("SelectedProgram");
+                OnPropertyChanged();
             }
         }
 
@@ -181,11 +148,11 @@ namespace PlayniteUI.ViewModels
             set
             {
                 isLoading = value;
-                OnPropertyChanged("IsLoading");
+                OnPropertyChanged();
             }
         }
 
-        private static Logger logger = LogManager.GetCurrentClassLogger();
+        private static ILogger logger = LogManager.GetLogger();
         private IWindowFactory window;
         private IDialogsFactory dialogs;
         private CancellationTokenSource cancelToken;
@@ -268,7 +235,7 @@ namespace PlayniteUI.ViewModels
 
         public void ConfirmDialog()
         {
-            Games = new List<InstalledGameMetadata>();
+            SelectedGames = new List<GameMetadata>();
             foreach (var program in Programs)
             {
                 if (!program.Import)
@@ -276,51 +243,42 @@ namespace PlayniteUI.ViewModels
                     continue;
                 }
 
-                var newGame = new Game()
+                var newGame = new GameInfo()
                 {
-                    Name = program.Name,
-                    Provider = Provider.Custom,
-                    InstallDirectory = program.WorkDir,
-                    Source = program.Type == ProgramType.UWP ? "Windows Store" : string.Empty
+                    Name = program.Item.Name,
+                    InstallDirectory = program.Item.WorkDir,
+                    Source = program.Type == ProgramType.UWP ? "Windows Store" : string.Empty,
+                    IsInstalled = true
                 };
 
-                var path = program.Path;
-                if (program.Type == ProgramType.Win32 && !string.IsNullOrEmpty(program.WorkDir))
+                var newMeta = new GameMetadata()
                 {
-                    path = @"{InstallDir}\" + program.Path.Replace(program.WorkDir, string.Empty).TrimStart('\\');
+                    GameInfo = newGame
+                };
+
+
+                var path = program.Item.Path;
+                if (program.Type == ProgramType.Win32 && !string.IsNullOrEmpty(program.Item.WorkDir))
+                {
+                    path = program.Item.Path.Replace(program.Item.WorkDir, string.Empty).TrimStart('\\');
                 }
 
-                newGame.PlayTask = new GameTask()
+                newGame.PlayAction = new GameAction()
                 {
                     Path = path,
-                    Arguments = program.Arguments,
-                    Type = GameTaskType.File,
+                    Arguments = program.Item.Arguments,
+                    Type = GameActionType.File,
                     WorkingDir = program.Type == ProgramType.Win32 ? "{InstallDir}" : string.Empty,
                     Name = "Play"                    
                 };
 
-                newGame.State = new GameState() { Installed = true };
-
-                InstalledGameMetadata.IconData icon = null;
-
                 if (program.IconSource != null)
                 {
-                    icon = new InstalledGameMetadata.IconData()
-                    {
-                        Name = Guid.NewGuid().ToString() + ".png"
-                    };
-
                     var bitmap = (BitmapSource)program.IconSource;
-                    icon.Data = bitmap.ToPngArray();
+                    newMeta.Icon = new MetadataFile(Guid.NewGuid().ToString() + ".png", bitmap.ToPngArray());
                 }
 
-                var data = new InstalledGameMetadata()
-                {
-                    Game = newGame,
-                    Icon = icon
-                };
-
-                Games.Add(data);
+                SelectedGames.Add(newMeta);
             }
 
             CloseView(true);
@@ -334,17 +292,20 @@ namespace PlayniteUI.ViewModels
                 return;
             }
             
-            var program = new ImportableProgram()
+            var productName = FileVersionInfo.GetVersionInfo(path).ProductName;
+            var import = new ImportableProgram(new Program()
             {
                 Icon = path,
-                Name = new DirectoryInfo(Path.GetDirectoryName(path)).Name,
+                Name = string.IsNullOrWhiteSpace(productName) ? new DirectoryInfo(Path.GetDirectoryName(path)).Name : productName,
                 Path = path,
-                WorkDir = Path.GetDirectoryName(path),
-                Import = true
+                WorkDir = Path.GetDirectoryName(path)
+            }, ProgramType.Win32)
+            {
+                Selected = true
             };
 
-            Programs.Add(program);
-            SelectedProgram = program;
+            Programs.Add(import);
+            SelectedProgram = import;
         }
 
         public async void DetectInstalled()
@@ -355,17 +316,17 @@ namespace PlayniteUI.ViewModels
             try
             {
                 var allApps = new List<ImportableProgram>();
-                var installed = await Playnite.Programs.GetInstalledPrograms(cancelToken);
+                var installed = await Playnite.Common.System.Programs.GetInstalledPrograms(cancelToken);
                 if (installed != null)
                 {
                     allApps.AddRange(installed.Select(a => new ImportableProgram(a, ProgramType.Win32)));
 
                     if (Environment.OSVersion.Version.Major == 10)
                     {
-                        allApps.AddRange(Playnite.Programs.GetUWPApps().Select(a => new ImportableProgram(a, ProgramType.UWP)));
+                        allApps.AddRange(Playnite.Common.System.Programs.GetUWPApps().Select(a => new ImportableProgram(a, ProgramType.UWP)));
                     }
 
-                    Programs = new ObservableCollection<ImportableProgram>(allApps.OrderBy(a => a.Name));
+                    Programs = new ObservableCollection<ImportableProgram>(allApps.OrderBy(a => a.Item.Name));
                 }
             }
             catch (Exception exc) when (!PlayniteEnvironment.ThrowAllErrors)
@@ -396,10 +357,10 @@ namespace PlayniteUI.ViewModels
 
             try
             {
-                var executables = await Playnite.Programs.GetExecutablesFromFolder(path, SearchOption.AllDirectories, cancelToken);
+                var executables = await Playnite.Common.System.Programs.GetExecutablesFromFolder(path, SearchOption.AllDirectories, cancelToken);
                 if (executables != null)
                 {
-                    var apps = executables.Select(a => new ImportableProgram(a, ProgramType.Win32)).OrderBy(a => a.Name);
+                    var apps = executables.Select(a => new ImportableProgram(a, ProgramType.Win32)).OrderBy(a => a.Item.Name);
                     Programs = new ObservableCollection<ImportableProgram>(apps);
                 }
             }
@@ -418,21 +379,20 @@ namespace PlayniteUI.ViewModels
             cancelToken?.Cancel();
         }
 
-        public static List<Game> AddImportableGamesToDb(List<InstalledGameMetadata> games, GameDatabase database)
+        public static List<Game> AddImportableGamesToDb(List<GameMetadata> games, GameDatabase database)
         {
-            foreach (var game in games)
+            using (var buffer = database.BufferedUpdate())
             {
-                if (game.Icon != null)
+                var addedGames = new List<Game>();
+                foreach (var game in games)
                 {
-                    var iconId = "images/custom/" + game.Icon.Name;
-                    game.Game.Icon = database.AddFileNoDuplicate(iconId, game.Icon.Name, game.Icon.Data);
+                    var added = database.ImportGame(game);
+                    addedGames.Add(added);
+                    database.AssignPcPlatform(added);
                 }
-            }
 
-            var insertGames = games.Select(a => a.Game).ToList();
-            database.AddGames(insertGames);
-            database.AssignPcPlatform(insertGames);
-            return insertGames;
+                return addedGames;
+            }
         }
     }
 }

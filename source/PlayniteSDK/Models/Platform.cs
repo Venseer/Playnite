@@ -1,7 +1,4 @@
-﻿using LiteDB;
-using Newtonsoft.Json;
-using Playnite.SDK.Converters;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -13,38 +10,8 @@ namespace Playnite.SDK.Models
     /// <summary>
     /// Represents game's platfom.
     /// </summary>
-    public class Platform : ObservableObject
+    public class Platform : DatabaseObject
     {
-        private ObjectId id;
-        /// <summary>
-        /// Gets or sets platform database id.
-        /// </summary>
-        [BsonId]
-        [JsonConverter(typeof(ObjectIdJsonConverter))]
-        public ObjectId Id
-        {
-            get => id;
-            set
-            {
-                id = value;
-                OnPropertyChanged("Id");
-            }
-        }
-
-        private string name;
-        /// <summary>
-        /// Gets or sets platform name.
-        /// </summary>
-        public string Name
-        {
-            get => name;
-            set
-            {
-                name = value;
-                OnPropertyChanged("Name");
-            }
-        }
-
         private string icon;
         /// <summary>
         /// Gets or sets platform icon.
@@ -55,7 +22,7 @@ namespace Playnite.SDK.Models
             set
             {
                 icon = value;
-                OnPropertyChanged("Icon");
+                OnPropertyChanged();
             }
         }
 
@@ -69,14 +36,14 @@ namespace Playnite.SDK.Models
             set
             {
                 cover = value;
-                OnPropertyChanged("Cover");
+                OnPropertyChanged();
             }
         }
 
         /// <summary>
         /// Creates new instance of Platform.
         /// </summary>
-        public Platform()
+        public Platform() : base()
         {
         }
 
@@ -84,7 +51,7 @@ namespace Playnite.SDK.Models
         /// Creates new instance of Platform with specific name.
         /// </summary>
         /// <param name="name">Platform name.</param>
-        public Platform(string name)
+        public Platform(string name) : this()
         {
             Name = name;
         }

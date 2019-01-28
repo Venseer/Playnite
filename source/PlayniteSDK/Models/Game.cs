@@ -8,17 +8,15 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using LiteDB;
 using System.Collections.Concurrent;
 using Newtonsoft.Json;
-using Playnite.SDK.Converters;
 
 namespace Playnite.SDK.Models
 {
     /// <summary>
     /// Represents Playnite game object.
     /// </summary>
-    public class Game : ObservableObject
+    public class Game : DatabaseObject
     {
         private string backgroundImage;
         /// <summary>
@@ -34,10 +32,10 @@ namespace Playnite.SDK.Models
             set
             {
                 backgroundImage = value;
-                OnPropertyChanged("BackgroundImage");
+                OnPropertyChanged();
             }
-        }       
-        
+        }
+
         private string description;
         /// <summary>
         /// Gets or sets HTML game description.
@@ -52,44 +50,26 @@ namespace Playnite.SDK.Models
             set
             {
                 description = value;
-                OnPropertyChanged("Description");
-                OnPropertyChanged("DescriptionView");
+                OnPropertyChanged();
             }
         }
 
-        private ComparableList<string> developers;
-        /// <summary>
-        /// Gets or sets list of developers.
-        /// </summary>
-        public ComparableList<string> Developers
-        {
-            get
-            {
-                return developers;
-            }
-
-            set
-            {
-                developers = value;
-                OnPropertyChanged("Developers");
-            }
-        }
-
-        private ComparableList<string> genres;
+        private List<Guid> genreIds;
         /// <summary>
         /// Gets or sets list of genres.
         /// </summary>
-        public ComparableList<string> Genres
+        public List<Guid> GenreIds
         {
             get
             {
-                return genres;
+                return genreIds;
             }
 
             set
             {
-                genres = value;
-                OnPropertyChanged("Genres");
+                genreIds = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(Genres));
             }
         }
 
@@ -107,7 +87,7 @@ namespace Playnite.SDK.Models
             set
             {
                 hidden = value;
-                OnPropertyChanged("Hidden");
+                OnPropertyChanged();
             }
         }
 
@@ -125,11 +105,11 @@ namespace Playnite.SDK.Models
             set
             {
                 favorite = value;
-                OnPropertyChanged("Favorite");
+                OnPropertyChanged();
             }
         }
 
-        
+
         private string icon;
         /// <summary>
         /// Gets or sets game icon. Local file path, HTTP URL or database file ids are supported.
@@ -144,44 +124,25 @@ namespace Playnite.SDK.Models
             set
             {
                 icon = value;
-                OnPropertyChanged("Icon");
+                OnPropertyChanged();
             }
         }
 
-        private int id;
-        /// <summary>
-        /// Gets or sets game database id.
-        /// </summary>
-        [BsonId]
-        public int Id
-        {
-            get
-            {
-                return id;
-            }
-
-            set
-            {
-                id = value;
-                OnPropertyChanged("Id");
-            }
-        }
-
-        private string image;
+        private string coverImage;
         /// <summary>
         /// Gets or sets game cover image. Local file path, HTTP URL or database file ids are supported.
         /// </summary>
-        public string Image
+        public string CoverImage
         {
             get
             {
-                return image;
+                return coverImage;
             }
 
             set
             {
-                image = value;
-                OnPropertyChanged("Image");
+                coverImage = value;
+                OnPropertyChanged();
             }
         }
 
@@ -195,9 +156,9 @@ namespace Playnite.SDK.Models
             {
                 if (string.IsNullOrEmpty(installDirectory))
                 {
-                    if (PlayTask != null)
+                    if (PlayAction != null)
                     {
-                        return PlayTask.WorkingDir;
+                        return PlayAction.WorkingDir;
                     }
                 }
 
@@ -207,25 +168,25 @@ namespace Playnite.SDK.Models
             set
             {
                 installDirectory = value;
-                OnPropertyChanged("InstallDirectory");
+                OnPropertyChanged();
             }
         }
 
-        private string isoPath;
+        private string gameImagePath;
         /// <summary>
         /// Gets or sets game's ISO, ROM or other type of executable image path.
         /// </summary>
-        public string IsoPath
+        public string GameImagePath
         {
             get
             {
-                return isoPath;
+                return gameImagePath;
             }
 
             set
             {
-                isoPath = value;
-                OnPropertyChanged("IsoPath");
+                gameImagePath = value;
+                OnPropertyChanged();
             }
         }
 
@@ -243,25 +204,7 @@ namespace Playnite.SDK.Models
             set
             {
                 lastActivity = value;
-                OnPropertyChanged("LastActivity");
-            }
-        }
-
-        private string name;
-        /// <summary>
-        /// Gets or sets game name.
-        /// </summary>
-        public string Name
-        {
-            get
-            {
-                return name;
-            }
-
-            set
-            {
-                name = value;
-                OnPropertyChanged("Name");
+                OnPropertyChanged();
             }
         }
 
@@ -279,88 +222,87 @@ namespace Playnite.SDK.Models
             set
             {
                 sortingName = value;
-                OnPropertyChanged("SortingName");
+                OnPropertyChanged();
             }
         }
 
-        private string providerId;
+        private string gameId;
         /// <summary>
         /// Gets or sets provider id. For example game's Steam ID.
         /// </summary>
-        public string ProviderId
+        public string GameId
         {
             get
             {
-                return providerId;
+                return gameId;
             }
 
             set
             {
-                providerId = value;
-                OnPropertyChanged("ProviderId");
+                gameId = value;
+                OnPropertyChanged();
             }
         }
 
-        private ObservableCollection<GameTask> otherTasks;
+        private Guid pluginId = Guid.Empty;
+        /// <summary>
+        /// Gets or sets id of plugin responsible for handling this game.
+        /// </summary>
+        public Guid PluginId
+        {
+            get
+            {
+                return pluginId;
+            }
+
+            set
+            {
+                pluginId = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private ObservableCollection<GameAction> otherActions;
         /// <summary>
         /// Gets or sets list of additional game actions.
         /// </summary>
-        public ObservableCollection<GameTask> OtherTasks
+        public ObservableCollection<GameAction> OtherActions
         {
             get
             {
-                return otherTasks;
+                return otherActions;
             }
 
             set
             {
-                otherTasks = value;
-                OnPropertyChanged("OtherTasks");
+                otherActions = value;
+                OnPropertyChanged();
             }
         }
 
-        private GameTask playTask;
+        private GameAction playAction;
         /// <summary>
         /// Gets or sets game action used to starting the game.
         /// </summary>
-        public GameTask PlayTask
+        public GameAction PlayAction
         {
             get
             {
-                return playTask;
+                return playAction;
             }
 
             set
             {
-                playTask = value;
-                OnPropertyChanged("PlayTask");
+                playAction = value;
+                OnPropertyChanged();
             }
         }
 
-        private Provider provider;
-        /// <summary>
-        /// Gets or sets original library provider.
-        /// </summary>
-        public Provider Provider
-        {
-            get
-            {
-                return provider;
-            }
-
-            set
-            {
-                provider = value;
-                OnPropertyChanged("Provider");
-            }
-        }
-
-        private ObjectId platformId;
+        private Guid platformId;
         /// <summary>
         /// Gets or sets platform id.
         /// </summary>
-        [JsonConverter(typeof(ObjectIdJsonConverter))]
-        public ObjectId PlatformId
+        public Guid PlatformId
         {
             get
             {
@@ -370,25 +312,46 @@ namespace Playnite.SDK.Models
             set
             {
                 platformId = value;
-                OnPropertyChanged("PlatformId");
+                OnPropertyChanged();
             }
         }
 
-        private ComparableList<string> publishers;
+        private List<Guid> publisherIds;
         /// <summary>
         /// Gets or sets list of publishers.
         /// </summary>
-        public ComparableList<string> Publishers
+        public List<Guid> PublisherIds
         {
             get
             {
-                return publishers;
+                return publisherIds;
             }
 
             set
             {
-                publishers = value;
-                OnPropertyChanged("Publishers");
+                publisherIds = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(Publishers));
+            }
+        }
+
+        // TODO change to standard list
+        private List<Guid> developerIds;
+        /// <summary>
+        /// Gets or sets list of developers.
+        /// </summary>
+        public List<Guid> DeveloperIds
+        {
+            get
+            {
+                return developerIds;
+            }
+
+            set
+            {
+                developerIds = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(Developers));
             }
         }
 
@@ -406,43 +369,46 @@ namespace Playnite.SDK.Models
             set
             {
                 releaseDate = value;
-                OnPropertyChanged("ReleaseDate");
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(ReleaseYear));
             }
         }
 
-        private ComparableList<string> categories;
+        private List<Guid> categoryIds;
         /// <summary>
         /// Gets or sets game categories.
         /// </summary>
-        public ComparableList<string> Categories
+        public List<Guid> CategoryIds
         {
             get
             {
-                return categories;
+                return categoryIds;
             }
 
             set
             {
-                categories = value;
-                OnPropertyChanged("Categories");
+                categoryIds = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(Categories));
             }
         }
 
-        private ComparableList<string> tags;
+        private List<Guid> tagIds;
         /// <summary>
         /// Gets or sets list of tags.
         /// </summary>
-        public ComparableList<string> Tags
+        public List<Guid> TagIds
         {
             get
             {
-                return tags;
+                return tagIds;
             }
 
             set
             {
-                tags = value;
-                OnPropertyChanged("Tags");
+                tagIds = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(Tags));
             }
         }
 
@@ -460,81 +426,87 @@ namespace Playnite.SDK.Models
             set
             {
                 links = value;
-                OnPropertyChanged("Links");
+                OnPropertyChanged();
             }
         }
 
+        private bool isInstalling;
         /// <summary>
-        /// Gets value indicating wheter a game is being installed..
+        /// Gets or sets value indicating wheter a game is being installed..
         /// </summary>
-        [JsonIgnore]
-        [BsonIgnore]
         public bool IsInstalling
         {
-            get => State.Installing;
-        }
-
-        /// <summary>
-        /// Gets value indicating wheter a game is being uninstalled.
-        /// </summary>
-        [JsonIgnore]
-        [BsonIgnore]
-        public bool IsUninstalling
-        {
-            get => State.Uninstalling;
-        }
-
-        /// <summary>
-        /// Gets value indicating wheter a game is being launched.
-        /// </summary>
-        [JsonIgnore]
-        [BsonIgnore]
-        public bool IsLaunching
-        {
-            get => State.Launching;
-        }
-
-        /// <summary>
-        /// Gets value indicating wheter a game is currently running.
-        /// </summary>
-        [JsonIgnore]
-        [BsonIgnore]
-        public bool IsRunning
-        {
-            get => State.Running;
-        }
-
-        /// <summary>
-        /// Gets value indicating wheter a game is installed.
-        /// </summary>
-        [JsonIgnore]
-        [BsonIgnore]
-        public bool IsInstalled
-        {
-            get => State.Installed;
-        }
-        
-        private GameState state = new GameState();
-        /// <summary>
-        /// Gets or sets game state.
-        /// </summary>
-        public GameState State
-        {
-            get
-            {
-                return state;
-            }
-
+            get => isInstalling;
             set
             {
-                state = value;
-                OnPropertyChanged("State");
-                OnPropertyChanged("IsRunning");
-                OnPropertyChanged("IsInstalling");
-                OnPropertyChanged("IsUninstalling");
-                OnPropertyChanged("IsLaunching");
-                OnPropertyChanged("IsInstalled");
+                isInstalling = value;
+                OnPropertyChanged();
             }
+        }
+
+        private bool isUninstalling;
+        /// <summary>
+        /// Gets or sets value indicating wheter a game is being uninstalled.
+        /// </summary>
+        public bool IsUninstalling
+        {
+            get => isUninstalling;
+            set
+            {
+                isUninstalling = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private bool isLaunching;
+        /// <summary>
+        /// Gets or sets value indicating wheter a game is being launched.
+        /// </summary>
+        public bool IsLaunching
+        {
+            get => isLaunching;
+            set
+            {
+                isLaunching = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private bool isRunning;
+        /// <summary>
+        /// Gets or sets value indicating wheter a game is currently running.
+        /// </summary>
+        public bool IsRunning
+        {
+            get => isRunning;
+            set
+            {
+                isRunning = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private bool isInstalled;
+        /// <summary>
+        /// Gets or sets value indicating wheter a game is installed.
+        /// </summary>
+        public bool IsInstalled
+        {
+            get => isInstalled;
+            set
+            {
+                isInstalled = value;
+                OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
+        /// Gets value indicating wheter the game is custom game.
+        /// </summary>
+        [JsonIgnore]
+        public bool IsCustomGame
+        {
+            get => PluginId == Guid.Empty;
         }
 
         private long playtime = 0;
@@ -551,7 +523,7 @@ namespace Playnite.SDK.Models
             set
             {
                 playtime = value;
-                OnPropertyChanged("Playtime");
+                OnPropertyChanged();
             }
         }
 
@@ -569,7 +541,7 @@ namespace Playnite.SDK.Models
             set
             {
                 added = value;
-                OnPropertyChanged("Added");
+                OnPropertyChanged();
             }
         }
 
@@ -587,7 +559,7 @@ namespace Playnite.SDK.Models
             set
             {
                 modified = value;
-                OnPropertyChanged("Modified");
+                OnPropertyChanged();
             }
         }
 
@@ -605,25 +577,26 @@ namespace Playnite.SDK.Models
             set
             {
                 playCount = value;
-                OnPropertyChanged("PlayCount");
+                OnPropertyChanged();
             }
         }
 
-        private string series;
+        private Guid seriesId;
         /// <summary>
         /// Gets or sets game series.
         /// </summary>
-        public string Series
+        public Guid SeriesId
         {
             get
             {
-                return series;
+                return seriesId;
             }
 
             set
             {
-                series = value;
-                OnPropertyChanged("Series");
+                seriesId = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(Series));
             }
         }
 
@@ -641,61 +614,64 @@ namespace Playnite.SDK.Models
             set
             {
                 version = value;
-                OnPropertyChanged("Version");
+                OnPropertyChanged();
             }
         }
 
-        private string ageRating;
+        private Guid ageRatingId;
         /// <summary>
         /// Gets or sets age rating for a game.
         /// </summary>
-        public string AgeRating
+        public Guid AgeRatingId
         {
             get
             {
-                return ageRating;
+                return ageRatingId;
             }
 
             set
             {
-                ageRating = value;
-                OnPropertyChanged("AgeRating");
+                ageRatingId = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(AgeRating));
             }
         }
 
-        private string region;
+        private Guid regionId;
         /// <summary>
         /// Gets or sets game region.
         /// </summary>
-        public string Region
+        public Guid RegionId
         {
             get
             {
-                return region;
+                return regionId;
             }
 
             set
             {
-                region = value;
-                OnPropertyChanged("Region");
+                regionId = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(Region));
             }
         }
 
-        private string source;
+        private Guid sourceId;
         /// <summary>
         /// Gets or sets source of the game.
         /// </summary>
-        public string Source
+        public Guid SourceId
         {
             get
             {
-                return source;
+                return sourceId;
             }
 
             set
             {
-                source = value;
-                OnPropertyChanged("Source");
+                sourceId = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(Source));
             }
         }
 
@@ -713,7 +689,7 @@ namespace Playnite.SDK.Models
             set
             {
                 completionStatus = value;
-                OnPropertyChanged("CompletionStatus");
+                OnPropertyChanged();
             }
         }
 
@@ -731,7 +707,7 @@ namespace Playnite.SDK.Models
             set
             {
                 userScore = value;
-                OnPropertyChanged("UserScore");
+                OnPropertyChanged();
             }
         }
 
@@ -749,7 +725,7 @@ namespace Playnite.SDK.Models
             set
             {
                 criticScore = value;
-                OnPropertyChanged("CriticScore");
+                OnPropertyChanged();
             }
         }
 
@@ -767,28 +743,142 @@ namespace Playnite.SDK.Models
             set
             {
                 communityScore = value;
-                OnPropertyChanged("CommunityScore");
+                OnPropertyChanged();
             }
+        }
+
+        #region Expanded        
+
+        [JsonIgnore]
+        public List<Genre> Genres
+        {
+            get
+            {
+                if (genreIds?.Any() == true)
+                {
+                    return new List<Genre>(DatabaseReference?.Genres.Where(a => genreIds.Contains(a.Id)));
+                }
+
+                return null;
+            }
+        }
+
+        [JsonIgnore]
+        public List<Company> Developers
+        {
+            get
+            {
+                if (developerIds?.Any() == true)
+                {
+                    return new List<Company>(DatabaseReference?.Companies.Where(a => developerIds.Contains(a.Id)));
+                }
+
+                return null;
+            }
+        }
+
+        [JsonIgnore]
+        public List<Company> Publishers
+        {
+            get
+            {
+                if (publisherIds?.Any() == true)
+                {
+                    return new List<Company>(DatabaseReference?.Companies.Where(a => publisherIds.Contains(a.Id)));
+                }
+
+                return null;
+            }
+        }
+
+        [JsonIgnore]
+        public List<Tag> Tags
+        {
+            get
+            {
+                if (tagIds?.Any() == true)
+                {
+                    return new List<Tag>(DatabaseReference?.Tags.Where(a => tagIds.Contains(a.Id)));
+                }
+
+                return null;
+            }
+        }
+
+        [JsonIgnore]
+        public List<Category> Categories
+        {
+            get
+            {
+                if (categoryIds?.Any() == true)
+                {
+                    return new List<Category>(DatabaseReference?.Categories.Where(a => categoryIds.Contains(a.Id)));                    
+                }
+
+                return null;
+            }
+        }
+
+        // TODO add caching
+        [JsonIgnore]
+        public Platform Platform
+        {
+            get => DatabaseReference?.Platforms[platformId];
+        }
+
+        [JsonIgnore]
+        public Series Series
+        {
+            get => DatabaseReference?.Series[seriesId];
+        }
+
+        [JsonIgnore]
+        public AgeRating AgeRating
+        {
+            get => DatabaseReference?.AgeRatings[ageRatingId];
+        }
+
+        [JsonIgnore]
+        public Region Region
+        {
+            get => DatabaseReference?.Regions[regionId];
+        }
+
+        [JsonIgnore]
+        public GameSource Source
+        {
+            get => DatabaseReference?.Sources[sourceId];
+        }
+
+        [JsonIgnore]
+        public int? ReleaseYear
+        {
+            get => ReleaseDate?.Year;
+        }
+
+        #endregion Expanded
+
+        // TODO internal
+        public static IGameDatabase DatabaseReference
+        {
+            get; set;
         }
 
         /// <summary>
         /// Creates new instance of a Game object.
         /// </summary>
-        public Game()
+        public Game() : base()
         {
-            Provider = Provider.Custom;
-            ProviderId = Guid.NewGuid().ToString();
+            GameId = Guid.NewGuid().ToString();
         }
 
         /// <summary>
         /// Creates new instance of a Game object with specific name.
         /// </summary>
         /// <param name="name">Game name.</param>
-        public Game(string name)
+        public Game(string name) : this()
         {
             Name = name;
-            Provider = Provider.Custom;
-            ProviderId = Guid.NewGuid().ToString();
         }
 
         /// <summary>

@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
-using Playnite.Models;
 
 namespace Playnite
 {
@@ -27,7 +27,7 @@ namespace Playnite
         }
     }
 
-    public class FilterSettings : INotifyPropertyChanged
+    public class FilterSettings : ObservableObject
     {
         [JsonIgnore]
         public bool SearchActive
@@ -45,24 +45,19 @@ namespace Playnite
                     IsUnInstalled ||
                     Hidden ||
                     Favorite ||
-                    Steam ||
-                    Origin ||
-                    GOG ||
-                    Uplay ||
-                    BattleNet ||
-                    Custom ||
                     !string.IsNullOrEmpty(Name) ||
                     !string.IsNullOrEmpty(ReleaseDate) ||
                     !string.IsNullOrEmpty(Series) ||
                     !string.IsNullOrEmpty(Source) ||
                     !string.IsNullOrEmpty(AgeRating) ||
                     !string.IsNullOrEmpty(Region) ||
-                    (Genres != null && Genres.Count > 0) ||
-                    (Publishers != null && Publishers.Count > 0) ||
-                    (Developers != null && Developers.Count > 0) ||
-                    (Categories != null && Categories.Count > 0) ||
-                    (Tags != null && Tags.Count > 0) ||
-                    (Platforms != null && Platforms.Count > 0);
+                    GenreString?.Any() == true ||
+                    Publishers?.Any() == true ||
+                    Developers?.Any() == true ||
+                    Categories?.Any() == true ||
+                    Tags?.Any() == true ||
+                    Platforms?.Any() == true ||
+                    Libraries?.Any() == true;
             }
         }
 
@@ -77,32 +72,61 @@ namespace Playnite
             set
             {
                 name = value;
-                OnPropertyChanged("Name");
-                OnFilterChanged("Name");
-                OnPropertyChanged("Active");
-                OnPropertyChanged("SearchActive");
+                OnPropertyChanged();
+                OnFilterChanged(nameof(Name));
+                OnPropertyChanged(nameof(Active));
+                OnPropertyChanged(nameof(SearchActive));
             }
         }
 
-        private List<string> genres;
-        public List<string> Genres
+        private List<Guid> genreIds;
+        public List<Guid> GenreIds
         {
             get
             {
-                return genres;
+                return genreIds;
             }
 
             set
             {
-                genres = value;
-                OnPropertyChanged("Genres");
-                OnFilterChanged("Genres");
-                OnPropertyChanged("Active");
+                genreIds = value;
+                if (genreIds != null)
+                {
+                    genreString = null;
+                    OnFilterChanged(nameof(GenreString));
+                }
+
+                OnPropertyChanged();
+                OnFilterChanged(nameof(GenreIds));                
+                OnPropertyChanged(nameof(Active));
             }
         }
 
-        private List<string> platforms;
-        public List<string> Platforms
+        private string genreString;
+        public string GenreString
+        {
+            get
+            {
+                return genreString;
+            }
+
+            set
+            {
+                genreString = value;
+                if (!genreString.IsNullOrEmpty())
+                {
+                    genreIds = null;
+                    OnFilterChanged(nameof(GenreIds));
+                }
+
+                OnPropertyChanged();                
+                OnFilterChanged(nameof(GenreString));
+                OnPropertyChanged(nameof(Active));
+            }
+        }
+
+        private string platforms;
+        public string Platforms
         {
             get
             {
@@ -112,9 +136,9 @@ namespace Playnite
             set
             {
                 platforms = value;
-                OnPropertyChanged("Platforms");
-                OnFilterChanged("Platforms");
-                OnPropertyChanged("Active");
+                OnPropertyChanged();
+                OnFilterChanged(nameof(Platforms));
+                OnPropertyChanged(nameof(Active));
             }
         }
 
@@ -129,15 +153,15 @@ namespace Playnite
             set
             {
                 releaseDate = value;
-                OnPropertyChanged("ReleaseDate");
-                OnFilterChanged("ReleaseDate");
-                OnPropertyChanged("Active");
+                OnPropertyChanged();
+                OnFilterChanged(nameof(ReleaseDate));
+                OnPropertyChanged(nameof(Active));
             }
         }
 
 
-        private List<string> publishers;
-        public List<string> Publishers
+        private string publishers;
+        public string Publishers
         {
             get
             {
@@ -147,14 +171,14 @@ namespace Playnite
             set
             {
                 publishers = value;
-                OnPropertyChanged("Publishers");
-                OnFilterChanged("Publishers");
-                OnPropertyChanged("Active");
+                OnPropertyChanged();
+                OnFilterChanged(nameof(Publishers));
+                OnPropertyChanged(nameof(Active));
             }
         }
 
-        private List<string> developers;
-        public List<string> Developers
+        private string developers;
+        public string Developers
         {
             get
             {
@@ -164,14 +188,14 @@ namespace Playnite
             set
             {
                 developers = value;
-                OnPropertyChanged("Developers");
-                OnFilterChanged("Developers");
-                OnPropertyChanged("Active");
+                OnPropertyChanged();
+                OnFilterChanged(nameof(Developers));
+                OnPropertyChanged(nameof(Active));
             }
         }
 
-        private List<string> categories;
-        public List<string> Categories
+        private string categories;
+        public string Categories
         {
             get
             {
@@ -181,14 +205,14 @@ namespace Playnite
             set
             {
                 categories = value;
-                OnPropertyChanged("Categories");
-                OnFilterChanged("Categories");
-                OnPropertyChanged("Active");
+                OnPropertyChanged();
+                OnFilterChanged(nameof(Categories));
+                OnPropertyChanged(nameof(Active));
             }
         }
 
-        private List<string> tags;
-        public List<string> Tags
+        private string tags;
+        public string Tags
         {
             get
             {
@@ -198,179 +222,9 @@ namespace Playnite
             set
             {
                 tags = value;
-                OnPropertyChanged("Tags");
-                OnFilterChanged("Tags");
-                OnPropertyChanged("Active");
-            }
-        }
-
-        private bool isInstalled;
-        public bool IsInstalled
-        {
-            get
-            {
-                return isInstalled;
-            }
-
-            set
-            {
-                isInstalled = value;
-                OnPropertyChanged("IsInstalled");
-                OnFilterChanged("IsInstalled");
-                OnPropertyChanged("Active");
-            }
-        }
-
-        private bool isUnInstalled;
-        public bool IsUnInstalled
-        {
-            get
-            {
-                return isUnInstalled;
-            }
-
-            set
-            {
-                isUnInstalled = value;
-                OnPropertyChanged("IsUnInstalled");
-                OnFilterChanged("IsUnInstalled");
-                OnPropertyChanged("Active");
-            }
-        }
-
-        private bool hidden;
-        public bool Hidden
-        {
-            get
-            {
-                return hidden;
-            }
-
-            set
-            {
-                hidden = value;
-                OnPropertyChanged("Hidden");
-                OnFilterChanged("Hidden");
-                OnPropertyChanged("Active");
-            }
-        }
-
-        private bool favorite;
-        public bool Favorite
-        {
-            get
-            {
-                return favorite;
-            }
-
-            set
-            {
-                favorite = value;
-                OnPropertyChanged("Favorite");
-                OnFilterChanged("Favorite");
-                OnPropertyChanged("Active");
-            }
-        }
-
-        private bool steam;
-        public bool Steam
-        {
-            get
-            {
-                return steam;
-            }
-
-            set
-            {
-                steam = value;
-                OnPropertyChanged("Steam");
-                OnFilterChanged("Steam");
-                OnPropertyChanged("Active");
-            }
-        }
-
-        private bool origin;
-        public bool Origin
-        {
-            get
-            {
-                return origin;
-            }
-
-            set
-            {
-                origin = value;
-                OnPropertyChanged("Origin");
-                OnFilterChanged("Origin");
-                OnPropertyChanged("Active");
-            }
-        }
-
-        private bool gog;
-        public bool GOG
-        {
-            get
-            {
-                return gog;
-            }
-
-            set
-            {
-                gog = value;
-                OnPropertyChanged("GOG");
-                OnFilterChanged("GOG");
-                OnPropertyChanged("Active");
-            }
-        }
-
-        private bool uplay;
-        public bool Uplay
-        {
-            get
-            {
-                return uplay;
-            }
-
-            set
-            {
-                uplay = value;
-                OnPropertyChanged("Uplay");
-                OnFilterChanged("Uplay");
-                OnPropertyChanged("Active");
-            }
-        }
-
-        private bool battleNet;
-        public bool BattleNet
-        {
-            get
-            {
-                return battleNet;
-            }
-
-            set
-            {
-                battleNet = value;
-                OnPropertyChanged("BattleNet");
-                OnFilterChanged("BattleNet");
-                OnPropertyChanged("Active");
-            }
-        }
-
-        private bool custom;
-        public bool Custom
-        {
-            get
-            {
-                return custom;
-            }
-
-            set
-            {
-                custom = value;
-                OnPropertyChanged("Custom");
-                OnFilterChanged("Custom");
-                OnPropertyChanged("Active");
+                OnPropertyChanged();
+                OnFilterChanged(nameof(Tags));
+                OnPropertyChanged(nameof(Active));
             }
         }
 
@@ -385,9 +239,9 @@ namespace Playnite
             set
             {
                 series = value;
-                OnPropertyChanged("Series");
-                OnFilterChanged("Series");
-                OnPropertyChanged("Active");
+                OnPropertyChanged();
+                OnFilterChanged(nameof(Series));
+                OnPropertyChanged(nameof(Active));
             }
         }
 
@@ -402,9 +256,9 @@ namespace Playnite
             set
             {
                 region = value;
-                OnPropertyChanged("Region");
-                OnFilterChanged("Region");
-                OnPropertyChanged("Active");
+                OnPropertyChanged();
+                OnFilterChanged(nameof(Region));
+                OnPropertyChanged(nameof(Active));
             }
         }
 
@@ -419,9 +273,9 @@ namespace Playnite
             set
             {
                 source = value;
-                OnPropertyChanged("Source");
-                OnFilterChanged("Source");
-                OnPropertyChanged("Active");
+                OnPropertyChanged();
+                OnFilterChanged(nameof(Source));
+                OnPropertyChanged(nameof(Active));
             }
         }
 
@@ -436,20 +290,99 @@ namespace Playnite
             set
             {
                 ageRating = value;
-                OnPropertyChanged("AgeRating");
-                OnFilterChanged("AgeRating");
-                OnPropertyChanged("Active");
+                OnPropertyChanged();
+                OnFilterChanged(nameof(AgeRating));
+                OnPropertyChanged(nameof(Active));
+            }
+        }
+
+        private bool isInstalled;
+        public bool IsInstalled
+        {
+            get
+            {
+                return isInstalled;
+            }
+
+            set
+            {
+                isInstalled = value;
+                OnPropertyChanged();
+                OnFilterChanged(nameof(IsInstalled));
+                OnPropertyChanged(nameof(Active));
+            }
+        }
+
+        private bool isUnInstalled;
+        public bool IsUnInstalled
+        {
+            get
+            {
+                return isUnInstalled;
+            }
+
+            set
+            {
+                isUnInstalled = value;
+                OnPropertyChanged();
+                OnFilterChanged(nameof(IsUnInstalled));
+                OnPropertyChanged(nameof(Active));
+            }
+        }
+
+        private bool hidden;
+        public bool Hidden
+        {
+            get
+            {
+                return hidden;
+            }
+
+            set
+            {
+                hidden = value;
+                OnPropertyChanged();
+                OnFilterChanged(nameof(Hidden));
+                OnPropertyChanged(nameof(Active));
+            }
+        }
+
+        private bool favorite;
+        public bool Favorite
+        {
+            get
+            {
+                return favorite;
+            }
+
+            set
+            {
+                favorite = value;
+                OnPropertyChanged();
+                OnFilterChanged(nameof(Favorite));
+                OnPropertyChanged(nameof(Active));
+            }
+        }
+
+        private List<Guid> libraries;
+        public List<Guid> Libraries
+        {
+            get
+            {
+                return libraries;
+            }
+
+            set
+            {
+                libraries = value;
+                OnPropertyChanged();
+                OnFilterChanged(nameof(Libraries));
+                OnPropertyChanged(nameof(Active));
             }
         }
 
         private bool suppressFilterChanges = false;
         public event EventHandler<FilterChangedEventArgs> FilterChanged;
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        public void OnPropertyChanged(string name)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-        }
 
         public void OnFilterChanged(string field)
         {
@@ -475,133 +408,103 @@ namespace Playnite
             if (Name != null)
             {
                 Name = null;
-                filterChanges.Add("Name");
+                filterChanges.Add(nameof(Name));
             }
 
-            if (Genres != null)
+            if (GenreString != null)
             {
-                Genres = null;
-                filterChanges.Add("Genres");
+                GenreString = null;
+                filterChanges.Add(nameof(GenreString));
             }
 
             if (Platforms != null)
             {
                 Platforms = null;
-                filterChanges.Add("Platforms");
+                filterChanges.Add(nameof(Platforms));
             }
 
             if (ReleaseDate != null)
             {
                 ReleaseDate = null;
-                filterChanges.Add("ReleaseDate");
+                filterChanges.Add(nameof(ReleaseDate));
             }
 
             if (Publishers != null)
             {
                 Publishers = null;
-                filterChanges.Add("Publishers");
+                filterChanges.Add(nameof(Publishers));
             }
 
             if (Developers != null)
             {
                 Developers = null;
-                filterChanges.Add("Developers");
+                filterChanges.Add(nameof(Developers));
             }
 
             if (Categories != null)
             {
                 Categories = null;
-                filterChanges.Add("Categories");
+                filterChanges.Add(nameof(Categories));
             }
 
             if (Tags != null)
             {
                 Tags = null;
-                filterChanges.Add("Tags");
+                filterChanges.Add(nameof(Tags));
             }
 
             if (IsInstalled != false)
             {
                 IsInstalled = false;
-                filterChanges.Add("IsInstalled");
+                filterChanges.Add(nameof(IsInstalled));
             }
 
             if (IsUnInstalled != false)
             {
                 IsUnInstalled = false;
-                filterChanges.Add("IsUnInstalled");
+                filterChanges.Add(nameof(IsUnInstalled));
             }
 
             if (Hidden != false)
             {
                 Hidden = false;
-                filterChanges.Add("Hidden");
+                filterChanges.Add(nameof(Hidden));
             }
 
             if (Favorite != false)
             {
                 Favorite = false;
-                filterChanges.Add("Favorite");
-            }
-
-            if (Steam != false)
-            {
-                Steam = false;
-                filterChanges.Add("Steam");
-            }
-
-            if (Origin != false)
-            {
-                Origin = false;
-                filterChanges.Add("Origin");
-            }
-
-            if (GOG != false)
-            {
-                GOG = false;
-                filterChanges.Add("GOG");
-            }
-
-            if (Uplay != false)
-            {
-                Uplay = false;
-                filterChanges.Add("Uplay");
-            }
-
-            if (BattleNet != false)
-            {
-                BattleNet = false;
-                filterChanges.Add("BattleNet");
-            }
-
-            if (Custom != false)
-            {
-                Custom = false;
-                filterChanges.Add("Custom");
+                filterChanges.Add(nameof(Favorite));
             }
 
             if (Series != null)
             {
                 Series = null;
-                filterChanges.Add("Series");
+                filterChanges.Add(nameof(Series));
             }
 
             if (Region != null)
             {
                 Region = null;
-                filterChanges.Add("Region");
+                filterChanges.Add(nameof(Region));
             }
 
             if (Source != null)
             {
                 Source = null;
-                filterChanges.Add("Source");
+                filterChanges.Add(nameof(Source));
             }
 
             if (AgeRating != null)
             {
                 AgeRating = null;
-                filterChanges.Add("AgeRating");
+                filterChanges.Add(nameof(AgeRating));
+            }
+
+            if (Libraries != null)
+            {
+                Libraries = null;
+                filterChanges.Add(nameof(Libraries));
             }
 
             suppressFilterChanges = false;

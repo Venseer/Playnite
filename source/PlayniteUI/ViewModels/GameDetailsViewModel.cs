@@ -1,6 +1,7 @@
 ﻿using Playnite;
 using Playnite.SDK;
 using Playnite.SDK.Models;
+using Playnite.Settings;
 using PlayniteUI.Commands;
 using System;
 using System.Collections.Generic;
@@ -11,7 +12,7 @@ using System.Windows;
 
 namespace PlayniteUI.ViewModels
 {
-    public class GameDetailsViewModel : ObservableObject
+    public class GameDetailsViewModel : ObservableObject, IDisposable
     {
         public enum FilterProperty
         {
@@ -27,7 +28,7 @@ namespace PlayniteUI.ViewModels
         private IResourceProvider resources;
         private IDialogsFactory dialogs;
         private GamesEditor editor;
-        private Settings settings;
+        private PlayniteSettings settings;
 
         public bool ShowInfoPanel
         {
@@ -39,14 +40,14 @@ namespace PlayniteUI.ViewModels
                 }
 
                 return
-                    (game.Genres != null && game.Genres.Count > 0) ||
-                    (game.Publishers != null && game.Publishers.Count > 0) ||
-                    (game.Developers != null && game.Developers.Count > 0) ||
-                    (game.Categories != null && game.Categories.Count > 0) ||
-                    (game.Tags != null && game.Tags.Count > 0) ||
+                    (game.GenreIds?.Any() == true) ||
+                    (game.PublisherIds?.Any() == true) ||
+                    (game.DeveloperIds?.Any() == true) ||
+                    (game.CategoryIds?.Any() == true) ||
+                    (game.TagIds?.Any() == true) ||
                     game.ReleaseDate != null ||
-                    (game.Links != null && game.Links.Count > 0) ||
-                    !string.IsNullOrEmpty(game.Platform.Name);
+                    (game.Links?.Any() == true) ||
+                    game.PlatformId != Guid.Empty;
 
             }
         }
@@ -95,7 +96,7 @@ namespace PlayniteUI.ViewModels
         {
             get
             {
-                return Game != null && !Game.IsInstalled && !IsRunning && !IsInstalling && !IsUninstalling && !IsLaunching && Game.Provider != Provider.Custom;
+                return Game != null && !Game.IsInstalled && !IsRunning && !IsInstalling && !IsUninstalling && !IsLaunching && Game.PluginId != Guid.Empty;
             }
         }
 
@@ -106,7 +107,7 @@ namespace PlayniteUI.ViewModels
             set
             {
                 game = value;
-                OnPropertyChanged("Game");
+                OnPropertyChanged();
             }
         }
 
@@ -206,7 +207,7 @@ namespace PlayniteUI.ViewModels
             });
         }
 
-        public GameDetailsViewModel(GameViewEntry game, Settings settings, GamesEditor editor, IDialogsFactory dialogs, IResourceProvider resources)
+        public GameDetailsViewModel(GameViewEntry game, PlayniteSettings settings, GamesEditor editor, IDialogsFactory dialogs, IResourceProvider resources)
         {
             this.resources = resources;
             this.dialogs = dialogs;
@@ -219,15 +220,23 @@ namespace PlayniteUI.ViewModels
             }
         }
 
+        public void Dispose()
+        {
+            if (game != null)
+            {
+                Game.PropertyChanged -= Game_PropertyChanged;
+            }
+        }
+
         private void Game_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            OnPropertyChanged("ShowInfoPanel");
-            OnPropertyChanged("IsRunning");
-            OnPropertyChanged("IsInstalling");
-            OnPropertyChanged("IsUninstalling");
-            OnPropertyChanged("IsLaunching");
-            OnPropertyChanged("IsPlayAvailable");
-            OnPropertyChanged("IsInstallAvailable");
+            OnPropertyChanged(nameof(ShowInfoPanel));
+            OnPropertyChanged(nameof(IsRunning));
+            OnPropertyChanged(nameof(IsInstalling));
+            OnPropertyChanged(nameof(IsUninstalling));
+            OnPropertyChanged(nameof(IsLaunching));
+            OnPropertyChanged(nameof(IsPlayAvailable));
+            OnPropertyChanged(nameof(IsInstallAvailable));
         }
 
         public void NavigateUrl(string url)
@@ -250,25 +259,25 @@ namespace PlayniteUI.ViewModels
             switch (property)
             {
                 case FilterProperty.Genres:
-                    settings.FilterSettings.Genres = new List<string>() { value };
+                    settings.FilterSettings.GenreString = value;
                     break;
                 case FilterProperty.Developers:
-                    settings.FilterSettings.Developers = new List<string>() { value };
+                    settings.FilterSettings.Developers = value;
                     break;
                 case FilterProperty.Publishers:
-                    settings.FilterSettings.Publishers = new List<string>() { value };
+                    settings.FilterSettings.Publishers = value;
                     break;
                 case FilterProperty.ReleaseDate:
                     settings.FilterSettings.ReleaseDate = value;
                     break;
                 case FilterProperty.Categories:
-                    settings.FilterSettings.Categories = new List<string>() { value };
+                    settings.FilterSettings.Categories = value;
                     break;
                 case FilterProperty.Tags:
-                    settings.FilterSettings.Tags = new List<string>() { value };
+                    settings.FilterSettings.Tags = value;
                     break;
                 case FilterProperty.Platform:
-                    settings.FilterSettings.Platforms = new List<string>() { value };
+                    settings.FilterSettings.Platforms = value;
                     break;
                 default:
                     break;

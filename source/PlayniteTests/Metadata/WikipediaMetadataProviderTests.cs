@@ -12,7 +12,7 @@ namespace PlayniteTests.Metadata
     [TestFixture]
     public class WikipediaMetadataProviderTests
     {
-        private void ValidateGameDate(Game game)
+        private void ValidateGameDate(GameInfo game)
         {
             Assert.IsNotNull(game.ReleaseDate);
             Assert.IsTrue(game.Developers.Count > 0 && !string.IsNullOrEmpty(game.Developers[0]));
@@ -20,9 +20,9 @@ namespace PlayniteTests.Metadata
             Assert.IsTrue(game.Genres.Count > 0 && !string.IsNullOrEmpty(game.Genres[0]));
         }
 
-        private void ValidateBoxArt(Game game)
+        private void ValidateBoxArt(GameInfo game)
         {
-            Assert.IsTrue(!string.IsNullOrEmpty(game.Image));
+            Assert.IsTrue(!string.IsNullOrEmpty(game.CoverImage));
         }
 
         [Test]
@@ -81,9 +81,6 @@ namespace PlayniteTests.Metadata
             ValidateGameDate(game);
 
             game = wiki.ParseGamePage(wiki.GetPage("StarCraft II: Wings of Liberty"));
-            ValidateGameDate(game);
-
-            game = wiki.ParseGamePage(wiki.GetPage("V-Rally"));
             ValidateGameDate(game);
         }
     }
