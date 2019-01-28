@@ -22,6 +22,8 @@ namespace PlayniteUI
         void Close();
 
         void Close(bool? resutl);
+
+        WindowBase Window { get; }
     }
 
     public abstract class WindowFactory : IWindowFactory
@@ -130,9 +132,12 @@ namespace PlayniteUI
         }
 
         public static void BringToForeground(WindowBase window)
-        {
-            window.Topmost = true;
-            window.Topmost = false;
+        {            
+            if (!window.Activate())
+            {
+                window.Topmost = true;
+                window.Topmost = false;
+            }
         }
     }    
 }

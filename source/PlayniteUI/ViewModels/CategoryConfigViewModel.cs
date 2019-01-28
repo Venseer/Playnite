@@ -13,22 +13,25 @@ namespace PlayniteUI.ViewModels
 {
     public class CategoryConfigViewModel : ObservableObject
     {
-        public class Category
+        public class Category : ObservableObject
         {
+            private bool? enabled;
             public bool? Enabled
             {
-                get; set;
+                get
+                {
+                    return enabled;
+                }
+
+                set
+                {
+                    enabled = value;
+                    OnPropertyChanged();
+                }
             }
 
-            public string Name
-            {
-                get; set;
-            }
-
-            public Category()
-            {
-
-            }
+            public string Name { get; }
+            // No setter: if the name of a Category changes, Categories could have duplicates
 
             public Category(string name, bool enabled)
             {
@@ -48,7 +51,7 @@ namespace PlayniteUI.ViewModels
             set
             {
                 categories = value;
-                OnPropertyChanged("Categories");
+                OnPropertyChanged();
             }
         }
 
@@ -63,7 +66,7 @@ namespace PlayniteUI.ViewModels
             set
             {
                 enableThreeState = value;
-                OnPropertyChanged("EnableThreeState");
+                OnPropertyChanged();
             }
         }
 
@@ -86,6 +89,7 @@ namespace PlayniteUI.ViewModels
             get => new RelayCommand<string>((category) =>
             {
                 AddCategory(category);
+                NewTextCat = String.Empty;
             });
         }
 
@@ -134,7 +138,15 @@ namespace PlayniteUI.ViewModels
         {
             if (!string.IsNullOrEmpty(category))
             {
-                Categories.Add(new Category(category, true));
+                Category existing = Categories.Where(a => a.Name.Equals(category, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                if (existing != null)
+                {
+                    existing.Enabled = true;
+                }
+                else
+                {
+                    Categories.Add(new Category(category, true));
+                }
             }
         }
 
@@ -142,20 +154,18 @@ namespace PlayniteUI.ViewModels
         {
             if (games != null)
             {
-                var categories = new List<string>();
-                categories = Categories.Where(a => a.Enabled == true).Select(a => a.Name).ToList();
-
                 using (database.BufferedUpdate())
                 {
                     foreach (var game in games)
                     {
+                        var categories = Categories.Where(a => a.Enabled == true).Select(a => a.Name).ToList();
                         var tempCat = game.Categories;
 
                         if (tempCat != null)
                         {
                             foreach (var cat in Categories.Where(a => a.Enabled == null))
                             {
-                                if (tempCat.Contains(cat.Name, StringComparer.OrdinalIgnoreCase))
+                                if (tempCat.Contains(cat.Name, StringComparer.OrdinalIgnoreCase) && !categories.Contains(cat.Name, StringComparer.OrdinalIgnoreCase))
                                 {
                                     categories.Add(cat.Name);
                                 }
@@ -173,7 +183,7 @@ namespace PlayniteUI.ViewModels
 
                         if (autoUpdate)
                         {
-                            database.UpdateGameInDatabase(game);
+                            database.Games.Update(game);
                         }
                     }
                 }
@@ -193,7 +203,7 @@ namespace PlayniteUI.ViewModels
 
                 if (autoUpdate)
                 {
-                    database.UpdateGameInDatabase(game);
+                    database.Games.Update(game);
                 }
             }
 
@@ -270,7 +280,7 @@ namespace PlayniteUI.ViewModels
         {
             var categories = new ObservableCollection<Category>();
 
-            foreach (var game in database.GamesCollection.Find(a => a.Categories != null))
+            foreach (var game in database.Games.Where(a => a.Categories != null))
             {
                 foreach (var cat in game.Categories)
                 {
@@ -284,6 +294,21 @@ namespace PlayniteUI.ViewModels
             }
 
             return categories;
+        }
+
+        private string newTextCat;
+        public string NewTextCat
+        {
+            get
+            {
+                return newTextCat;
+            }
+
+            set
+            {
+                newTextCat = value;
+                OnPropertyChanged();
+            }
         }
     }
 }
